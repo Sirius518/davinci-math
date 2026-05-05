@@ -1,0 +1,18 @@
+name: decontam_step2_embed
+
+input_path: ./data/processed/math_clean_llm_with_cascade_v2.parquet
+output_path: ./artifacts/decontamination/step2_embedded.parquet
+
+workers: 4
+
+processors:
+  - name: decontam_embed
+    target_phases: ["posttrain", "midtrain"]
+    checkpoint_dir: ./artifacts/checkpoints/decontamination
+    embedding_api_base: http://localhost:39600/v1
+    embedding_model: Qwen3-Embedding-4B
+    embedding_batch_size: 256
+    embedding_concurrency: 8
+    embedding_timeout: 300
+    embedding_max_retries: 3
+    encoding_format: float

@@ -1,0 +1,133 @@
+name: math_clean_pipeline_v2
+input_path: ./data/intermediate/data_same_format_shards
+output_path: ./data/processed/math_clean_classified_v2.parquet
+checkpoint_dir: ./artifacts/checkpoints/math_clean_v2
+workers: 96
+
+# Shared dataset priority anchor (tier 1 = highest priority)
+_dataset_priority: &dataset_priority
+  1:
+    - MiroMind-m1-62k
+    - Dolci-Think-RL-7B
+    - Dolci-Think-RL-32B
+    - Dolci-RL-Zero-Math-7B
+    - Dolci-Instruct-RL
+    - deepscaler
+    - DeepMath-103K
+    - dapo-math-17k
+    - polaris-data-53K
+    - Skywork-OR1-RL-Data
+    - STILL-3-RL
+    - openreasoning
+    - OpenR1-math
+  2:
+    - OpenMathReasoning
+    - omega
+    - Nemotron-Math-v2
+    - KlearReasoner
+    - OpenThoughts
+    - numinamath
+    - Llama-Nemotron-Post-Training-math
+  3:
+    - Ring-lite-sft
+    - stepfun_sft
+    - SYNTHETIC-2
+    - dolphin-r1
+
+processors:
+  # ===== Phase 1: Exact Dedup + Light Clean =====
+  - name: exact_dedup
+    enabled: true
+    dataset_priority: *dataset_priority
+
+  - name: text_normalize
+    enabled: true
+    normalize_punctuation: true
+
+  - name: instruction_wrapper_cleaner
+    enabled: true
+
+  - name: text_cleaning
+    enabled: true
+
+  - name: prompt_contamination_filter
+    enabled: true
+
+  - name: missing_context_filter
+    enabled: true
+
+  - name: length_filter
+    enabled: true
+
+  # ===== Phase 2: Fuzzy Dedup — Round 1 (high-confidence, J≥0.7) =====
+  - name: fuzzy_dedup
+    step_name: fuzzy_dedup_round1
+    enabled: true
+    query_backend: array
+    threshold: 0.7
+    num_perm: 128
+    bands: 16
+    ngram_size: 3
+    tokenizer: char
+    preprocess_text: true
+    workers: 128
+    query_workers: 24
+    verify_workers: 96
+    query_chunk_size: 4096
+    emit_chunk_size: 65536
+    candidate_queue_maxsize: 512
+    max_candidates_per_record: 150
+    skip_training_phases: drop
+    dataset_priority: *dataset_priority
+
+  # ===== Phase 3: Fuzzy Dedup — Round 2 (broader, J≥0.5) =====
+  - name: fuzzy_dedup
+    step_name: fuzzy_dedup_round2
+    enabled: true
+    query_backend: array
+    threshold: 0.5
+    num_perm: 128
+    bands: 21
+    ngram_size: 3
+    tokenizer: char
+    preprocess_text: true
+    workers: 128
+    query_workers: 24
+    verify_workers: 96
+    query_chunk_size: 2048
+    emit_chunk_size: 32768
+    candidate_queue_maxsize: 1024
+    max_candidates_per_record: 500
+    skip_training_phases: drop
+    dataset_priority: *dataset_priority
+
+  # ===== Phase 4: Empty Answer → Midtrain =====
+  - name: empty_answer_tagger
+    enabled: true
+
+  # ===== Phase 5: Classification =====
+  - name: language_filter
+    enabled: true
+    cjk_threshold: 0.02
+    other_threshold: 0.02
+
+  - name: math_filter
+    enabled: true
+
+  - name: phantom_reference_filter
+    enabled: true
+
+  - name: broken_question_filter
+    enabled: true
+
+  - name: mcq_converter
+    enabled: true
+
+  - name: meta_task_filter
+    enabled: true
+
+  - name: boolean_answer_filter
+    enabled: true
+
+  - name: answer_quality_filter
+    enabled: true

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dataset-pipeline"
+version = "0.1.0"
+description = "Reproducible dataset processing pipeline with pluggable inference backends."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "PyYAML>=6.0",
+    "pyarrow>=14.0",
+    "datasketch>=1.6.5",
+    "tiktoken",
+    "xxhash",
+    "orjson",
+    "numpy>=1.26",
+    "numba",
+    "aiohttp>=3.9",
+    "faiss-cpu>=1.7",
+    "math-verify",
+]
+
+[project.scripts]
+pipeline = "pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pipeline*"]

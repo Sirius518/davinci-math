@@ -1,0 +1,18 @@
+# Core runtime dependencies
+PyYAML>=6.0
+pyarrow>=14.0
+
+# Stage2 dedup mature retrieval backend (LSH/MinHash)
+datasketch>=1.6.5
+tiktoken
+xxhash
+orjson
+
+# Numeric kernels for stage2 similarity computation.
+numpy>=1.26
+numba
+
+aiohttp>=3.9
+faiss-cpu>=1.7
+
+math-verify

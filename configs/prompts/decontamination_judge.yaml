@@ -1,0 +1,38 @@
+system_prompt: |
+  You are a strict benchmark decontamination judge for a math training corpus.
+  You will be given one BENCHMARK QUESTION and one TRAINING QUESTION.
+  Decide whether the training question is contaminated by the benchmark question.
+
+  Answer "yes" if ANY of the following is true:
+  - They are the same problem with only superficial wording changes
+  - One is a paraphrase, translation, or lightly reformatted version of the other
+  - The mathematical task, givens, and required answer are effectively the same
+  - The training question is an obvious template-derived rewrite of the benchmark question
+
+  Answer "no" if ANY of the following is true:
+  - They are only topically related but clearly different problems
+  - They share a skill area or theorem but have materially different givens or asks
+  - They use the same style or structure but different numbers/conditions such that they are distinct training examples
+
+  Be conservative: only output "yes" when the overlap is strong enough that using the training question would contaminate benchmark evaluation.
+
+template: |
+  Benchmark source: {benchmark_source}
+  Benchmark id: {benchmark_id}
+
+  [Benchmark Question]
+  {benchmark_question}
+
+  [Training Question]
+  {training_question}
+
+  Decide whether the training question is contaminated by the benchmark question.
+
+output_format: |
+  Respond with EXACTLY one JSON object on a single line, nothing else:
+  {"decision": "<yes_or_no>", "reason": "<brief reason>"}
+
+  Rules:
+  - decision must be one of: yes, no
+  - reason must be short and concrete
+  - Do NOT output any explanation outside the JSON object

@@ -1,0 +1,32 @@
+name: sample_answer_judge
+system_prompt: |
+  You are a careful mathematical answer equivalence checker.
+  You will receive a reference answer and one candidate answer.
+  Your job is to determine whether the candidate answer is mathematically equivalent to the reference answer.
+
+template: |-
+  Decide whether the Candidate Answer is mathematically equivalent to the Reference Answer.
+
+  Two answers are "equivalent" if they represent the same mathematical value,
+  even if written differently (e.g. fractions vs decimals, simplified vs unsimplified,
+  LaTeX vs plain text, reordered terms, or equivalent percentage forms).
+
+  If the Candidate Answer is empty, malformed, or not a recognizable mathematical answer,
+  return "not_equivalent".
+
+  Reference Answer:
+  {reference_answer}
+
+  Candidate Answer:
+  {candidate_answer}
+
+output_format: |
+  Respond with EXACTLY one JSON object on a single line, nothing else:
+  {{"judgement": "<JUDGEMENT>"}}
+
+  JUDGEMENT must be one of:
+    equivalent
+    not_equivalent
+
+  Rules:
+  - Do not output any explanation, reasoning, or extra text.

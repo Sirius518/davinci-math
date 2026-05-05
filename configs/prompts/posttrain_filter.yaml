@@ -1,0 +1,94 @@
+# =========================================================================
+# Prompt config for LLM-based math question classification.
+#
+# Assembly order:
+#   instruction + category_definitions + output_format
+#   + examples + suffix + <question>\n<answer>
+#
+# Design: question+answer are appended at the very end so all requests
+# share the longest possible common prefix, maximising KV-cache reuse.
+# =========================================================================
+
+instruction: |
+  You are a strict math-dataset quality classifier.
+  You will be given a QUESTION and its ANSWER from a math training dataset.
+  Classify the sample into exactly one category and assign the most fitting tag from that category.
+
+category_definitions:
+  posttrain: |
+    A well-formed, self-contained math problem whose answer can be automatically verified — suitable for reinforcement-learning training.
+    ALL of the following must hold:
+    - Clearly about mathematics (algebra, geometry, number theory, combinatorics, probability, calculus, linear algebra, discrete math, etc.)
+    - Self-contained: all necessary information is provided within the question
+    - The answer is a definite, concise, verifiable value (number, algebraic expression, specific mathematical object, short concrete conclusion)
+    - The answer can be automatically checked by string/numeric matching — NOT a multi-step proof, long explanation, or subjective judgment
+    - Written in English (minor inline LaTeX is fine)
+    - No answer or solution steps leaked into the question text
+    - No broken formatting, truncation, or corruption
+    Tag: ok
+  midtrain: |
+    Math-related but NOT suitable for RL training. Route to supervised fine-tuning instead.
+    Classify as midtrain and pick the matching tag:
+    - [non_verifiable_answer] Answer is a proof, long derivation, multi-sentence explanation, or conceptual explanation that cannot be auto-checked ("Prove that...", "Show that...", "Explain why...", "What is the definition of...")
+    - [boolean_and_mcq] Answer is true/false/yes/no, OR multiple-choice question with options embedded in the text (A/B/C/D style) — not suitable for open-ended RL
+    - [answer_leakage] Answer or solution steps already partially/fully present in the question text
+    - [prompt_contamination] Reasoning traces, special tokens (<|im_start|>), or chat role formatting leaked into the question
+    - [meta_task] Math meta-task: grading a solution, comparing approaches, tutoring step-by-step, evaluating correctness
+    - [chinese] Math question written in Chinese — still useful for SFT
+  drop: |
+    Should be completely removed.
+    Classify as drop and pick the matching tag:
+    - [non_math_signal] Content is not about math at all (coding, writing, creative writing, advice, business, legal, medical, roleplay, etc.) in any language; also includes STEM problems (physics, chemistry, engineering, biology) that are primarily about another field with little mathematical content
+    - [missing_context] References external figures, tables, images, prior problems, or context not provided ("as shown above", "Refer to Figure 3")
+    - [broken_format] Corrupted, truncated, or unreadable text; HTML/base64 artifacts; diff patches; code fences
+    - [trivial_content] Bare expression, single number, or too short/nonsensical to be a meaningful problem
+    - [other_non_english] Math content written in a language other than English or Chinese (e.g. French, German, Spanish, Japanese, Korean, Russian, Arabic, etc.) — only English and Chinese math are accepted
+
+examples:
+  - question: "Find all real solutions to $x^3 - 6x^2 + 11x - 6 = 0$."
+    answer: "1, 2, 3"
+    label: posttrain
+    tag: ok
+  - question: "A bag contains 5 red balls and 3 blue balls. Two balls are drawn without replacement. What is the probability that both balls are red?"
+    answer: "5/14"
+    label: posttrain
+    tag: ok
+  - question: "Prove that for all positive integers n, $1 + 2 + \\cdots + n = \\frac{n(n+1)}{2}$."
+    answer: "We proceed by induction. Base case: n=1, 1 = 1(2)/2 = 1. Inductive step: assume true for k, then 1+2+...+k+(k+1) = k(k+1)/2 + (k+1) = (k+1)(k+2)/2. QED."
+    label: midtrain
+    tag: non_verifiable_answer
+  - question: "True or false: Every continuous function on a closed interval is bounded."
+    answer: "True"
+    label: midtrain
+    tag: boolean_and_mcq
+  - question: "Which is the derivative of $x^3$? (A) $x^2$ (B) $3x^2$ (C) $3x$ (D) $x^4$"
+    answer: "B"
+    label: midtrain
+    tag: boolean_and_mcq
+  - question: "已知函数 $f(x) = x^2 - 3x + 2$，求 $f(f(1))$ 的值。"
+    answer: "0"
+    label: midtrain
+    tag: chinese
+  - question: "Write a Python function that computes the Fibonacci sequence."
+    answer: "def fib(n): ..."
+    label: drop
+    tag: non_math_signal
+  - question: "Refer to Figure 3.2 and find the area of the shaded region."
+    answer: "12.5"
+    label: drop
+    tag: missing_context
+
+suffix: "Now classify the following sample.\n\nQuestion: "
+answer_separator: "\nAnswer: "
+
+output_format: |
+  Respond with EXACTLY one JSON object on a single line, nothing else:
+  {"label": "<LABEL>", "tag": "<TAG>"}
+
+  LABEL must be one of: posttrain, midtrain, drop
+  TAG must be one of the following (and must belong to the chosen LABEL):
+    posttrain → ok
+    midtrain  → non_verifiable_answer | boolean_and_mcq | answer_leakage | prompt_contamination | meta_task | chinese
+    drop      → non_math_signal | missing_context | broken_format | trivial_content | other_non_english
+
+  Do NOT output any explanation, reasoning, or extra text — only the JSON object.

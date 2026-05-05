@@ -1,0 +1,44 @@
+name: decontamination
+
+input_path: ./data/processed/math_clean_llm_with_cascade_v2.parquet
+output_path: ./data/processed/math_clean_decontaminated_v2.parquet
+
+workers: 1
+
+processors:
+  - name: decontamination
+    benchmark_paths:
+      - ./data/data_same_format/aime2024.parquet
+      - ./data/data_same_format/aime2025.parquet
+      - ./data/data_same_format/aime2026.parquet
+      - ./data/data_same_format/amc23.parquet
+      - ./data/data_same_format/beyondaime.parquet
+      - ./data/data_same_format/hmmtfeb2025.parquet
+      - ./data/data_same_format/hmmtfeb2026.parquet
+      - ./data/data_same_format/hmmtnov2025.parquet
+      - ./data/data_same_format/imo2025.parquet
+      - ./data/data_same_format/imoanswerbench.parquet
+      - ./data/data_same_format/math500.parquet
+      - ./data/data_same_format/minerva.parquet
+      - ./data/data_same_format/olympiadbench.parquet
+    target_phases: ["posttrain", "midtrain"]
+    checkpoint_dir: ./artifacts/checkpoints/decontamination
+    embedding_api_base: http://localhost:39600/v1
+    embedding_model: Qwen3-Embedding-4B
+    embedding_batch_size: 256
+    embedding_concurrency: 32
+    embedding_timeout: 300
+    embedding_max_retries: 3
+    faiss_gpu_id: 0
+    top_k: 10
+    similarity_threshold:
+    llm_api_base: http://localhost:8000/v1
+    llm_model: gpt-oss-20b
+    llm_concurrency: 512
+    llm_max_retries: 3
+    llm_api_timeout: 300
+    llm_max_tokens: 96
+    llm_temperature: 0.0
+    llm_top_p: 1.0
+    max_question_chars: 4000
+    prompt_path: configs/prompts/decontamination_judge.yaml

@@ -1,0 +1,89 @@
+# =========================================================================
+# Prompt config for LLM-based midtrain data filtering.
+#
+# Purpose: re-examine records already classified as midtrain and decide
+# whether they should be kept (midtrain) or dropped entirely.
+#
+# Midtrain data characteristics:
+#   - No ground-truth answer, OR
+#   - Previously tagged with a midtrain filter tag
+#     (non_verifiable_answer, boolean_and_mcq, etc.)
+#
+# The model only needs to make a binary keep/drop decision.
+# =========================================================================
+
+instruction: |
+  You are a strict data quality filter for a math training dataset.
+  You will be given a QUESTION (and its ANSWER if available) that has already been classified as "midtrain" — math-related but not suitable for RL.
+  Your job is simple: decide whether this sample should be KEPT for supervised fine-tuning, or DROPPED entirely because it has no training value.
+
+category_definitions:
+  keep: |
+    The sample contains meaningful math-related content worth keeping for supervised fine-tuning.
+    Even though it is not suitable for RL, it still has educational or training value. Keep it if:
+    - It is a legitimate math problem written in English or Chinese, even if the answer is a proof, explanation, or boolean
+    - It is a valid multiple-choice math question in English or Chinese
+    - It is a conceptual math question ("Explain why...", "Define...") in English or Chinese
+    - It is a math-adjacent STEM problem with significant mathematical content, in English or Chinese
+    - It contains answer leakage or prompt contamination, but the underlying math question is still meaningful
+    - It is a math meta-task (grading, comparing) that still demonstrates mathematical reasoning
+    Tag: keep
+  drop: |
+    The sample should be removed because it has no useful training value. Drop it if:
+    - [non_math_signal] Content has nothing to do with math (coding, writing, advice, business, legal, medical, roleplay, etc.) in any language
+    - [missing_context] References external figures, tables, images, or prior context not provided — the question is unanswerable without them
+    - [broken_format] Corrupted, truncated, or unreadable text; HTML/base64 artifacts; diff patches; garbled characters
+    - [trivial_content] Bare expression, single number, meaningless fragment, or too short/nonsensical to be useful
+    - [other_non_english] Math content written in a language other than English or Chinese (e.g. French, German, Spanish, Japanese, Korean, Russian, Arabic, Hindi, etc.) — we only keep English and Chinese math
+
+examples:
+  - question: "Prove that $\\sqrt{2}$ is irrational."
+    answer: "Assume for contradiction that sqrt(2) = p/q in lowest terms..."
+    label: keep
+    tag: keep
+  - question: "已知 $a + b = 5$，$ab = 6$，求 $a^2 + b^2$ 的值。"
+    answer: "13"
+    label: keep
+    tag: keep
+  - question: "Which of the following is a prime number? (A) 15 (B) 21 (C) 23 (D) 27"
+    answer: "C"
+    label: keep
+    tag: keep
+  - question: "Explain the difference between permutations and combinations."
+    answer: "Permutations consider order while combinations do not..."
+    label: keep
+    tag: keep
+  - question: "Write a cover letter for a marketing manager position."
+    answer: "Dear Hiring Manager, I am writing to express my interest..."
+    label: drop
+    tag: non_math_signal
+  - question: "Based on Table 2, calculate the mean and standard deviation."
+    answer: "Mean = 45.3, SD = 12.1"
+    label: drop
+    tag: missing_context
+  - question: "\\x00\\x01\\x02 garbled text ñ€¢ broken"
+    answer: ""
+    label: drop
+    tag: broken_format
+  - question: "42"
+    answer: ""
+    label: drop
+    tag: trivial_content
+  - question: "Trouvez toutes les solutions réelles de $x^2 - 4 = 0$."
+    answer: "$x = \\pm 2$"
+    label: drop
+    tag: other_non_english
+
+suffix: "Now decide whether to keep or drop the following sample.\n\nQuestion: "
+answer_separator: "\nAnswer: "
+
+output_format: |
+  Respond with EXACTLY one JSON object on a single line, nothing else:
+  {"label": "<LABEL>", "tag": "<TAG>"}
+
+  LABEL must be one of: keep, drop
+  TAG must be one of the following (and must belong to the chosen LABEL):
+    keep → keep
+    drop → non_math_signal | missing_context | broken_format | trivial_content | other_non_english
+
+  Do NOT output any explanation, reasoning, or extra text — only the JSON object.

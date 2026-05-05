@@ -1,0 +1,12 @@
+name: same_format
+dataset_name: ""
+input_path: ./data/data_same_format
+output_path: ./data/intermediate/data_same_format_shards
+source_split: train
+options:
+  file_glob: "*.parquet"
+  target_shard_size_mb: 200
+  shard_prefix: canonical
+  batch_size: 5000
+  workers: 128
+  clear_output: true

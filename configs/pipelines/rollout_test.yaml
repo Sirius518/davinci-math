@@ -1,0 +1,24 @@
+name: rollout_test
+input_path: data/test/rollout_test_10.parquet
+output_path: data/test/rollout_test_10_result.parquet
+
+workers: 1
+
+processors:
+  - name: rollout_correctness
+    enabled: true
+    api_base: http://localhost:8000/v1
+    model: gpt-oss-120b
+    prompt_path: configs/prompts/rollout_correctness.yaml
+    num_samples: 8
+    concurrency: 64
+    max_retries: 3
+    temperature: 0.7
+    top_p: 0.95
+    top_k: -1
+    max_tokens: 65024
+    max_content_chars: 50000
+    reasoning_effort: ""
+    separate_reasoning: true
+    api_timeout: 600
+    target_phase: ""

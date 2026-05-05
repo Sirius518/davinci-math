@@ -1,0 +1,39 @@
+name: full_pipeline
+input_path: ./data/intermediate/openreasoning.parquet
+output_path: ./data/processed/openreasoning.final.parquet
+checkpoint_dir: ./artifacts/checkpoints/full_pipeline
+processors:
+  - name: text_cleaning
+    enabled: true
+  - name: language_filter
+    enabled: true
+  - name: length_filter
+    enabled: true
+  - name: mcq_converter
+    enabled: true
+  - name: rule_correctness
+    enabled: true
+  - name: exact_dedup
+    enabled: true
+  - name: fuzzy_dedup
+    enabled: true
+    threshold: 0.8
+    num_perm: 64
+    bands: 8
+    ngram_size: 3
+    workers: 1
+  - name: cot_cleaning
+    enabled: true
+  - name: rollout_correctness
+    enabled: false
+    model_config: ./configs/models/local_sglang.yaml
+    model: gpt-oss-120b
+    num_samples: 8
+  - name: difficulty_annotation
+    enabled: false
+    model_config: ./configs/models/local_sglang.yaml
+    model: gpt-oss-120b
+  - name: pass_ratio_filter
+    enabled: false
+    min_ratio: 0.2
+    max_ratio: 0.9

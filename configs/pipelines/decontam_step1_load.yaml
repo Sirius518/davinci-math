@@ -1,0 +1,25 @@
+name: decontam_step1_load
+
+input_path: ./data/processed/math_clean_llm_with_cascade_v2.parquet
+output_path: ./artifacts/decontamination/step1_loaded.parquet
+
+workers: 1
+
+processors:
+  - name: decontam_load
+    benchmark_paths:
+      - ./data/data_same_format/aime2024.parquet
+      - ./data/data_same_format/aime2025.parquet
+      - ./data/data_same_format/aime2026.parquet
+      - ./data/data_same_format/amc23.parquet
+      - ./data/data_same_format/beyondaime.parquet
+      - ./data/data_same_format/hmmtfeb2025.parquet
+      - ./data/data_same_format/hmmtfeb2026.parquet
+      - ./data/data_same_format/hmmtnov2025.parquet
+      - ./data/data_same_format/imo2025.parquet
+      - ./data/data_same_format/imoanswerbench.parquet
+      - ./data/data_same_format/math500.parquet
+      - ./data/data_same_format/minerva.parquet
+      - ./data/data_same_format/olympiadbench.parquet
+    target_phases: ["posttrain", "midtrain"]
+    checkpoint_dir: ./artifacts/checkpoints/decontamination

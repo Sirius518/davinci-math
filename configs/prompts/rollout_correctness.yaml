@@ -1,0 +1,24 @@
+name: rollout_correctness
+
+system_prompt: ""
+
+# Template mode: {problem} is replaced with the question text at call-time
+# via str.replace (NOT str.format), so curly braces like \boxed{} are safe.
+template: |-
+  {problem}
+  Please reason step by step, and put your final answer within \boxed{}.
+
+# Regex to extract the answer from \boxed{...}.
+# Supports one level of nested braces (e.g. \boxed{\frac{1}{2}}).
+# The parser always takes the **last** match in the output.
+answer_pattern: "\\\\boxed\\{((?:[^{}]|\\{[^{}]*\\})*)\\}"
+
+# Legacy fields (unused in template mode, kept for reference)
+# instruction: ""
+# examples: []
+# suffix: ""
+
+# Answer comparison settings
+normalize_unicode: true
+strip_whitespace: true
+case_insensitive: true

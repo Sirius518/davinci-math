@@ -1,0 +1,26 @@
+name: llm_classify
+input_path: ./data/processed/math_clean_classified_v2.parquet
+output_path: ./data/processed/math_clean_llm_classified.parquet
+
+workers: 1
+
+processors:
+  # Step 1: reclassify posttrain records (posttrain → posttrain / midtrain / drop)
+  - name: llm_classifier
+    enabled: true
+    api_base: http://localhost:8000/v1
+    model: gpt-oss-20b
+    prompt_path: configs/prompts/posttrain_filter.yaml
+    target_phase: ""
+    concurrency: 2048
+    max_retries: 3
+
+  # Step 2: filter midtrain records (midtrain → keep / drop)
+  - name: llm_classifier
+    enabled: true
+    api_base: http://localhost:8000/v1
+    model: gpt-oss-20b
+    prompt_path: configs/prompts/midtrain_filter.yaml
+    target_phase: midtrain
+    concurrency: 2048
+    max_retries: 3

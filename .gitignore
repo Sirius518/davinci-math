@@ -1,0 +1,43 @@
+# Python build / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Pipeline artifacts and data (local only)
+data/
+artifacts/
+logs/
+reports/
+checkpoints/
+
+# Data formats
+*.parquet
+*.jsonl
+*.json
+*.npy
+*.pkl
+*.pt
+*.bin
+*.tar
+*.tar.gz
+*.zip
+
+# LaTeX exports of prompts
+tex/

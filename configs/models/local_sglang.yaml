@@ -1,0 +1,6 @@
+backend: sglang
+base_url: http://127.0.0.1:30000
+model: gpt-oss-120b
+timeout_seconds: 120
+max_retries: 3
+cache_dir: ./artifacts/cache/sglang

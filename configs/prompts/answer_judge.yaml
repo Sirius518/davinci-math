@@ -1,0 +1,57 @@
+name: answer_judge
+system_prompt: |
+  You are a careful mathematical answer assessor.
+  You will receive a math problem, a reference answer, and multiple candidate answers from rollout sampling.
+  Your job is to group equivalent candidate answers, determine the majority answer, and judge its relationship with the reference answer.
+
+template: |-
+  You will perform the following tasks for a math problem with multiple candidate answers.
+
+  Task 1: Group equivalent candidate answers.
+  Two answers are "equivalent" if they represent the same mathematical value,
+  even if written differently (e.g. fractions vs decimals, simplified vs unsimplified,
+  LaTeX vs plain text, reordered terms, or equivalent percentage forms).
+  Assign each candidate answer to a group. Answers that are empty or unparseable form their own singleton groups.
+
+  Task 2: Determine the majority answer.
+  The majority answer is the representative answer from the largest equivalence group.
+  Report the group size as majority_count.
+
+  Task 3: Judge whether the Reference Answer is clear.
+  "clear" means it is a legible, complete, well-formed answer to the problem.
+  "unclear" means it is empty, blank, malformed, truncated, obviously irrelevant,
+  or not a recognizable mathematical answer.
+  Do NOT judge whether it is mathematically correct in Task 3.
+
+  Task 4: Only if the Reference Answer is clear, judge whether the majority answer
+  (from Task 2) is mathematically equivalent to the Reference Answer.
+  If the Reference Answer is unclear, return "not_applicable" for the equivalence judgement.
+
+  Problem:
+  {question}
+
+  Reference Answer:
+  {gt_answer}
+
+  Candidate Answers (from {num_samples} rollout samples):
+  {candidate_answers}
+
+output_format: |
+  Respond with EXACTLY one JSON object on a single line, nothing else:
+  {{"majority_answer": "<MAJORITY>", "majority_count": <COUNT>, "gt_quality": "<QUALITY>", "judgement": "<JUDGEMENT>"}}
+
+  MAJORITY: the representative answer string from the largest equivalence group.
+  COUNT: how many candidate answers are in that largest group (integer).
+
+  QUALITY must be one of:
+    clear
+    unclear
+
+  JUDGEMENT must be one of:
+    equivalent
+    not_equivalent
+    not_applicable
+
+  Rules:
+  - If gt_quality is "unclear", judgement MUST be "not_applicable".
+  - Do not output any explanation, reasoning, or extra text.

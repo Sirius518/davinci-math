@@ -1,0 +1,20 @@
+name: single_answer_judge
+input_path: ./data/rollout_slices/slice_00_judged.parquet
+output_path: ./data/rollout_slices/slice_00_sample_judged.parquet
+
+workers: 8
+
+processors:
+  - name: sample_answer_judge
+    enabled: true
+    api_base: http://localhost:8000/v1
+    api_key: ""
+    model: gpt-oss-20b
+    prompt_path: configs/prompts/sample_answer_judge.yaml
+    target_phase: posttrain
+    concurrency: 1024
+    max_retries: 3
+    api_timeout: 300
+    max_tokens: 16
+    temperature: 0.0
+    top_p: 1.0

@@ -1,0 +1,28 @@
+name: decontam_step3_search
+
+input_path: ./data/processed/math_clean_llm_with_cascade_v2.parquet
+output_path: ./data/processed/math_clean_decontaminated_v2.parquet
+
+workers: 8
+
+processors:
+  - name: decontam_search
+    target_phases: ["posttrain", "midtrain"]
+    checkpoint_dir: ./artifacts/checkpoints/decontamination
+    embedding_model: Qwen3-Embedding-4B
+    faiss_gpu_id: 0
+    top_k: 20
+    similarity_threshold:
+    llm_api_base: http://localhost:8000/v1
+    llm_model: gpt-oss-20b
+    llm_concurrency: 128
+    llm_max_retries: 3
+    llm_api_timeout: 300
+    llm_max_tokens: 4096
+    llm_temperature: 0.6
+    llm_top_p: 0.95
+    max_question_chars: 4000
+    prompt_path: configs/prompts/decontamination_judge.yaml
+    llm_extra_body:
+      chat_template_kwargs:
+        enable_thinking: true
